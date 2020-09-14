@@ -2,10 +2,18 @@ const express = require('express');
 const Usuario = require('../models/Usuario');
 const bcrypt = require('bcrypt');
 const _ = require('underscore');
+const {verificarToken,verificaAdmin_Role} = require('../middlewares/autenticacion')
+
+
 
 const app = express();
 
-app.get('/usuario',(req,res)=>{
+app.get('/usuario', verificarToken ,(req,res)=>{
+
+
+
+
+
 
     let desde = req.query.desde || 0;
 
@@ -26,7 +34,7 @@ app.get('/usuario',(req,res)=>{
 
             })
         };
-        Usuario.count({estado:true},(err,conteo)=>{
+        Usuario.countDocuments({estado:true},(err,conteo)=>{
             res.json({
                 ok:true,
                 usuarios,
@@ -39,7 +47,7 @@ app.get('/usuario',(req,res)=>{
 })
 
 
-app.post('/usuario',(req,res)=>{
+app.post('/usuario',[verificarToken,verificaAdmin_Role],(req,res)=>{
     //variable donde guarda los datos emviados por el formulario
     let body = req.body
     //crea un object de Usuario con los datos del formulario
@@ -52,7 +60,12 @@ app.post('/usuario',(req,res)=>{
     //guarda en la base de datos
     usuario.save((err,usuarioDB)=>{
 
-        
+        if(err){
+            return res.status(400).json({
+                ok:false,
+                err
+            });
+        }     
 
         res.json({
             ok:true,
@@ -63,7 +76,7 @@ app.post('/usuario',(req,res)=>{
 })
 
 
-app.put('/usuario/:id',(req,res)=>{
+app.put('/usuario/:id',[verificarToken,verificaAdmin_Role],(req,res)=>{
 
     let id = req.params.id;
     let body = _.pick(req.body,['nombre','email','img','role','estado']);
@@ -82,7 +95,7 @@ app.put('/usuario/:id',(req,res)=>{
         });
     })
 });
-app.delete('/usuario/:id',function(req,res){
+app.delete('/usuario/:id',[verificarToken,verificaAdmin_Role],function(req,res){
     
     let id = req.params.id;
     //Usuario.findByIdAndRemove(id,(err,usuarioBorrado)=>{
